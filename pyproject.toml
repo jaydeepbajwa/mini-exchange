@@ -9,6 +9,9 @@ authors = [{ name = "Jaydeep Bajwa" }]
 dependencies = [
     "fastapi>=0.115,<1",
     "uvicorn[standard]>=0.30,<1",
+    # imported directly in api.py -- declared here rather than relied on
+    # transitively through fastapi
+    "pydantic>=2.7,<3",
 ]
 
 [project.scripts]

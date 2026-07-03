@@ -56,7 +56,7 @@ const WS_URL =
   `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.hostname}:8000/ws/market-data`;
 
 const emptySnapshot: Snapshot = {
-  symbol: "LOOPFX",
+  symbol: "MINIX",
   sequence: 0,
   best_bid: null,
   best_ask: null,

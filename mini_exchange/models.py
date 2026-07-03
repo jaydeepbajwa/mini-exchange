@@ -15,13 +15,17 @@ class Side(StrEnum):
 
 @dataclass
 class RestingOrder:
+    """One order resting in the book.
+
+    Time priority is carried by position in the price level's deque, not by a
+    field on the order — arrival order IS the data structure.
+    """
+
     order_id: str
     side: Side
     price: int
     remaining: int
     owner: str
-    sequence: int
-    received_at_ns: int
 
     def to_dict(self) -> dict[str, int | str]:
         return {
@@ -30,8 +34,6 @@ class RestingOrder:
             "price": self.price,
             "remaining": self.remaining,
             "owner": self.owner,
-            "sequence": self.sequence,
-            "received_at_ns": self.received_at_ns,
         }
 
 

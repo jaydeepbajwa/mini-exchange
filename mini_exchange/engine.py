@@ -19,10 +19,13 @@ class LatencyRecorder:
         return elapsed_us
 
     def snapshot(self) -> dict[str, float | int]:
+        # Read the most recent sample BEFORE sorting — after the sort,
+        # values[-1] is the max, not the latest.
+        last_us = self.samples_us[-1] if self.samples_us else 0.0
         values = sorted(self.samples_us)
         return {
             "count": len(values),
-            "last_us": values[-1] if values else 0.0,
+            "last_us": last_us,
             "p50_us": self._percentile(values, 0.50),
             "p99_us": self._percentile(values, 0.99),
         }
@@ -38,7 +41,7 @@ class LatencyRecorder:
 class MatchingEngine:
     """Single-symbol limit order book with strict price-time matching."""
 
-    def __init__(self, symbol: str = "LOOPFX") -> None:
+    def __init__(self, symbol: str = "MINIX") -> None:
         self.symbol = symbol
         self.bids: dict[int, Deque[RestingOrder]] = {}
         self.asks: dict[int, Deque[RestingOrder]] = {}
@@ -101,10 +104,11 @@ class MatchingEngine:
                     price=price,
                     remaining=quantity,
                     owner=owner,
-                    sequence=self._next_sequence(),
-                    received_at_ns=perf_counter_ns(),
                 )
             )
+            # Bump the book sequence so snapshots reflect the new resting order
+            # even when nothing traded.
+            self._next_sequence()
 
         latency_us = self._latency.record(perf_counter_ns() - started_ns)
         return OrderAck(

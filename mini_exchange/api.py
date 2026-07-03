@@ -37,7 +37,11 @@ class Feed:
         for websocket in self.connections:
             try:
                 await websocket.send_json(payload)
-            except RuntimeError:
+            except Exception:
+                # A client that dropped mid-send can raise RuntimeError,
+                # WebSocketDisconnect, or a transport-specific ConnectionClosed
+                # depending on timing — any send failure means the same thing:
+                # prune the socket so it can't leak.
                 stale.append(websocket)
         for websocket in stale:
             self.disconnect(websocket)
@@ -69,20 +73,31 @@ def message(event_type: str, ack: object | None = None) -> dict[str, object]:
     }
 
 
+# The scripted flow rests more volume than it consumes, so an unattended
+# server would grow the book (and every full-snapshot broadcast) forever.
+# Reset to the seeded book every few cycles to keep the demo bounded.
+DEMO_RESET_EVERY = len(DEMO_FLOW) * 3
+
+
 async def demo_flow() -> None:
+    global engine
     index = 0
     while True:
         await asyncio.sleep(1.4)
-        side, price, quantity = DEMO_FLOW[index % len(DEMO_FLOW)]
-        index += 1
         async with engine_lock:
-            ack = engine.submit_limit(
-                side=side,
-                price=price,
-                quantity=quantity,
-                owner="demo-flow",
-            )
-            payload = message("demo_order", ack)
+            if index and index % DEMO_RESET_EVERY == 0:
+                engine = seeded_engine()
+                payload = message("reset")
+            else:
+                side, price, quantity = DEMO_FLOW[index % len(DEMO_FLOW)]
+                ack = engine.submit_limit(
+                    side=side,
+                    price=price,
+                    quantity=quantity,
+                    owner="demo-flow",
+                )
+                payload = message("demo_order", ack)
+            index += 1
         await feed.broadcast(payload)
 
 
