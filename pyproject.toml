@@ -1,0 +1,22 @@
+[project]
+name = "mini-exchange"
+version = "0.1.0"
+description = "A price-time matching engine with a live WebSocket dashboard."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Jaydeep Bajwa" }]
+dependencies = [
+    "fastapi>=0.115,<1",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[project.scripts]
+mini-exchange-api = "mini_exchange.api:main"
+
+[tool.setuptools]
+packages = ["mini_exchange"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
